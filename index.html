@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Trivia de Programación</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #4fc3f7;
+    }
+    .question-container {
+      background: #2e2e3f;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      max-width: 600px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .question {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    .answers button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #4fc3f7;
+      color: black;
+      transition: 0.3s;
+    }
+    .answers button:hover {
+      background-color: #29b6f6;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .difficulty-select {
+      margin-top: 20px;
+    }
+    select {
+      font-size: 16px;
+      padding: 5px;
+    }
+    button#startBtn, button#restartBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4fc3f7;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #restartBtn {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Trivia de Programación</h1>
+
+  <div class="difficulty-select">
+    <label for="difficulty">Seleccioná dificultad:</label>
+    <select id="difficulty">
+      <option value="easy">Fácil</option>
+      <option value="medium">Media</option>
+      <option value="hard">Difícil</option>
+    </select>
+    <br>
+    <button id="startBtn">Comenzar Juego</button>
+  </div>
+
+  <div class="question-container" style="display:none;">
+    <div id="question" class="question"></div>
+    <div class="answers" id="answers"></div>
+    <div id="result" class="result"></div>
+  </div>
+
+<button id="restartBtn">Volver a Jugar</button>
+
+  <!-- Sonidos -->
+
+<audio id="correctSound" src="correcto.mp3"></audio> <audio id="wrongSound" src="incorrecto.mp3"></audio>
+
+  <script>
+    const allQuestions = {
+      easy: [
+        {
+          question: "¿Qué significa HTML?",
+          answers: ["Hyper Text Markup Language", "Home Tool Markup Language", "Hyper Transfer Text Language", "High-level Text Machine Language"],
+          correct: 0
+        },
+        {
+          question: "¿Qué lenguaje se usa para dar estilo a una página web?",
+          answers: ["HTML", "CSS", "Python", "JavaScript"],
+          correct: 1
+        },
+        {
+          question: "¿Qué significa CSS?",
+          answers: ["Creative Style Sheets", "Cascading Style Sheets", "Colorful Style Sheets", "Computer Style Sheets"],
+          correct: 1
+        },
+        {
+          question: "¿Cuál es el símbolo para comentarios de una línea en JavaScript?",
+          answers: ["//", "#", "<!--", "-->"],
+          correct: 0
+        },
+        {
+          question: "¿Qué lenguaje se ejecuta en el navegador?",
+          answers: ["Python", "Java", "JavaScript", "C++"],
+          correct: 2
+        }
+      ],
+      medium: [
+        {
+          question: "¿Qué operador se usa para comparar igualdad en valor y tipo en JavaScript?",
+          answers: ["==", "!=", "===", "="],
+          correct: 2
+        },
+        {
+          question: "¿Qué tipo de dato es `true` en JavaScript?",
+          answers: ["String", "Boolean", "Number", "Undefined"],
+          correct: 1
+        },
+        {
+          question: "¿Cómo se declara una función en JavaScript?",
+          answers: ["function miFuncion()", "func miFuncion()", "def miFuncion()", "create miFuncion()"],
+          correct: 0
+        },
+        {
+          question: "¿Qué hace `console.log()`?",
+          answers: ["Imprime en pantalla", "Escribe en el DOM", "Es una variable", "Declara una clase"],
+          correct: 0
+        },
+        {
+          question: "¿Qué estructura permite repetir acciones?",
+          answers: ["if", "switch", "for", "return"],
+          correct: 2
+        },
+        {
+          question: "¿Cuál es el valor de `typeof null`?",
+          answers: ["null", "undefined", "object", "boolean"],
+          correct: 2
+        },
+        {
+          question: "¿Qué es una API?",
+          answers: ["Un protocolo de red", "Una base de datos", "Una interfaz de programación", "Un lenguaje de programación"],
+          correct: 2
+        },
+        {
+          question: "¿Cuál de estos es un framework de JavaScript?",
+          answers: ["Laravel", "Django", "React", "Flask"],
+          correct: 2
+        },
+        {
+          question: "¿Qué método de array filtra elementos?",
+          answers: ["map()", "filter()", "reduce()", "join()"],
+          correct: 1
+        },
+        {
+          question: "¿Cuál de estos NO es un tipo primitivo en JavaScript?",
+          answers: ["string", "boolean", "object", "number"],
+          correct: 2
+        }
+      ],
+      hard: [
+        {
+          question: "¿Cuál es el resultado de typeof NaN en JavaScript?",
+          answers: ["NaN", "undefined", "number", "object"],
+          correct: 2
+        },
+        {
+          question: "¿Qué hace la función `Array.prototype.map()`?",
+          answers: ["Filtra elementos", "Transforma cada elemento del array", "Une arrays", "Ordena elementos"],
+          correct: 1
+        },
+        {
+          question: "¿Qué significa asincronía en JavaScript?",
+          answers: ["Ejecuta tareas en orden", "Bloquea el flujo", "Permite tareas paralelas sin bloquear", "Se ejecuta sólo una vez"],
+          correct: 2
+        },
+        {
+          question: "¿Qué es una promesa (Promise)?",
+          answers: ["Una función", "Un evento", "Un valor que estará disponible en el futuro", "Una API"],
+          correct: 2
+        },
+        {
+          question: "¿Cuál es el propósito de `use strict`?",
+          answers: ["Hacer código más rápido", "Permitir errores", "Aplicar reglas estrictas", "Definir funciones"],
+          correct: 2
+        },
+        {
+          question: "¿Qué método convierte JSON a objeto JavaScript?",
+          answers: ["JSON.toObject()", "JSON.parse()", "JSON.stringify()", "JSON.convert()"],
+          correct: 1
+        },
+        {
+          question: "¿Qué es el event loop en JavaScript?",
+          answers: ["Un bucle que recorre arrays", "Un ciclo para eventos del DOM", "Un sistema de gestión de tareas asincrónicas", "Un tipo de función"],
+          correct: 2
+        },
+        {
+          question: "¿Cuál es el resultado de [] + [] en JavaScript?",
+          answers: ["[]", "0", "''", "NaN"],
+          correct: 2
+        },
+        {
+          question: "¿Cuál es el valor de null == undefined?",
+          answers: ["true", "false", "undefined", "error"],
+          correct: 0
+        },
+        {
+          question: "¿Qué hace el operador `??`?",
+          answers: ["Comparación", "Coalescencia nula", "Asignación", "Multiplicación"],
+          correct: 1
+        },
+        {
+          question: "¿Qué hace el operador `!==`?",
+          answers: ["Igual en tipo y valor", "Distinto en tipo o valor", "Comparación estricta", "Resta"],
+          correct: 1
+        },
+        {
+          question: "¿Qué devuelve `Array.isArray({})`?",
+          answers: ["true", "false", "undefined", "error"],
+          correct: 1
+        },
+        {
+          question: "¿Qué hace `let x = [...'abc']`?",
+          answers: ["Error", "['abc']", "['a','b','c']", "['a','bc']"],
+          correct: 2
+        },
+        {
+          question: "¿Qué tipo de valor devuelve una función async?",
+          answers: ["Array", "Boolean", "String", "Promise"],
+          correct: 3
+        },
+        {
+          question: "¿Qué hace el operador `&&`?",
+          answers: ["OR", "AND", "NOT", "XOR"],
+          correct: 1
+        },
+        {
+          question: "¿Cuál es el resultado de `0 === false`?",
+          answers: ["true", "false", "undefined", "NaN"],
+          correct: 1
+        },
+        {
+          question: "¿Qué hace `document.querySelector('#id')`?",
+          answers: ["Busca por clase", "Busca por etiqueta", "Busca por id", "Busca todo el DOM"],
+          correct: 2
+        },
+        {
+          question: "¿Qué es una función de callback?",
+          answers: ["Una variable", "Una función que se pasa como argumento", "Un objeto", "Una propiedad del DOM"],
+          correct: 1
+        },
+        {
+          question: "¿Qué significa DOM?",
+          answers: ["Data Object Model", "Document Object Model", "Document Output Management", "Default Order Method"],
+          correct: 1
+        },
+        {
+          question: "¿Qué hace `localStorage.setItem()`?",
+          answers: ["Lee datos", "Guarda datos", "Borra datos", "Crea variables globales"],
+          correct: 1
+        }
+      ]
+    };
+
+    let selectedQuestions = [];
+    let current = 0;
+    let score = 0;
+
+    const resultDiv = document.getElementById("result");
+    const correctSound = document.getElementById("correctSound");
+    const wrongSound = document.getElementById("wrongSound");
+    const restartBtn = document.getElementById("restartBtn");
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      const difficulty = document.getElementById("difficulty").value;
+      let questionPool = allQuestions[difficulty];
+      let totalQuestions = difficulty === "easy" ? 5 : difficulty === "medium" ? 10 : 20;
+
+      selectedQuestions = questionPool
+        .sort(() => Math.random() - 0.5)
+        .slice(0, totalQuestions);
+
+      current = 0;
+      score = 0;
+      resultDiv.textContent = "";
+      document.querySelector(".difficulty-select").style.display = "none";
+      document.querySelector(".question-container").style.display = "block";
+      restartBtn.style.display = "none";
+      showQuestion();
+    });
+
+    function showQuestion() {
+      const q = selectedQuestions[current];
+      document.getElementById("question").innerText = q.question;
+      const answersDiv = document.getElementById("answers");
+      answersDiv.innerHTML = "";
+      q.answers.forEach((answer, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = answer;
+        btn.onclick = () => checkAnswer(index);
+        answersDiv.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(index) {
+      const q = selectedQuestions[current];
+      if (index === q.correct) {
+        score++;
+        correctSound.play();
+        resultDiv.textContent = "✅ ¡Correcto!";
+        resultDiv.style.color = "lightgreen";
+      } else {
+        wrongSound.play();
+        resultDiv.textContent = `❌ Incorrecto. La respuesta era: "${q.answers[q.correct]}"`;
+        resultDiv.style.color = "#ff8080";
+      }
+
+      current++;
+
+      setTimeout(() => {
+        resultDiv.textContent = "";
+        if (current < selectedQuestions.length) {
+          showQuestion();
+        } else {
+          document.getElementById("question").textContent = `Juego terminado. Tu puntaje fue: ${score} / ${selectedQuestions.length}`;
+          document.getElementById("answers").innerHTML = "";
+          restartBtn.style.display = "inline-block";
+        }
+      }, 1800);
+    }
+
+    restartBtn.addEventListener("click", () => {
+      document.querySelector(".difficulty-select").style.display = "block";
+      document.querySelector(".question-container").style.display = "none";
+      restartBtn.style.display = "none";
+    });
+  </script>
+
+</body>
+</html>
