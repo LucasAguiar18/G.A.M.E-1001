@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Trivia Runner Multijugador</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f0f0f0;
+    }
+
+    .menu, .game {
+      display: none;
+    }
+
+    .active {
+      display: block;
+    }
+
+    .menu {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .menu input, .menu select, .menu button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+    }
+
+    .game {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .track {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #c8e6c9;
+      border-bottom: 2px solid #388e3c;
+    }
+
+    .player {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      bottom: 0;
+      left: 100px;
+      border-radius: 50%;
+    }
+
+    #player1 { background: tomato; }
+    #player2 { background: #3f51b5; }
+
+    .obstacle {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      bottom: 0;
+      background: #4caf50;
+    }
+
+    .finish-line {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 10px;
+      height: 100%;
+      background: red;
+    }
+
+    .question-box {
+      display: none;
+      position: absolute;
+      top: 10%;
+      left: 20%;
+      background: #fff3cd;
+      border: 2px solid #ff9800;
+      padding: 20px;
+      width: 300px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .question-box.active {
+      display: block;
+    }
+
+    .answer {
+      margin: 5px;
+      padding: 10px;
+      background: #ffe082;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="menu active" id="menu">
+  <h2>Trivia Runner</h2>
+  <label>Modo:</label><br>
+  <select id="mode">
+    <option value="1">1 Jugador</option>
+    <option value="2">2 Jugadores</option>
+  </select><br>
+
+  <input type="text" id="name1" placeholder="Nombre Jugador 1"><br>
+  <input type="text" id="name2" placeholder="Nombre Jugador 2" style="display:none;"><br>
+
+  <button onclick="startGame()">Comenzar</button>
+</div>
+
+<div class="game" id="game">
+  <div class="track" id="track1">
+    <div class="player" id="player1"></div>
+    <div class="question-box" id="questionBox1">
+      <p id="question1"></p>
+      <div id="answers1"></div>
+    </div>
+    <div class="finish-line" id="finishLine1"></div>
+  </div>
+  <div class="track" id="track2" style="display:none;">
+    <div class="player" id="player2"></div>
+    <div class="question-box" id="questionBox2">
+      <p id="question2"></p>
+      <div id="answers2"></div>
+    </div>
+    <div class="finish-line" id="finishLine2"></div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  { question: "¿Qué es HTML?", answers: ["Lenguaje de marcado", "Programa", "Navegador"], correct: 0 },
+  { question: "¿2 + 2?", answers: ["4", "5", "3"], correct: 0 },
+  { question: "¿Qué significa CSS?", answers: ["Cascading Style Sheets", "Color Style Set", "Computer Style Script"], correct: 0 },
+  { question: "¿Resultado de 5 * 6?", answers: ["30", "25", "20"], correct: 0 },
+  { question: "¿Qué hace JavaScript?", answers: ["Interactividad", "Estilo", "Maquetado"], correct: 0 },
+  { question: "¿Qué significa API?", answers: ["Interfaz de Programación de Aplicaciones", "Aplicación de Interfaz de Proceso", "Arranque de Proceso Internacional"], correct: 0 },
+  { question: "¿Qué es un servidor?", answers: ["Computadora que brinda servicios", "Computadora personal", "Dispositivo móvil"], correct: 0 },
+  { question: "¿Símbolo de 'or' en programación?", answers: ["||", "&&", "!"], correct: 0 }
+];
+
+const menu = document.getElementById('menu');
+const game = document.getElementById('game');
+const track2 = document.getElementById('track2');
+const name2Input = document.getElementById('name2');
+
+let mode = 1;
+let isJumping1 = false, isJumping2 = false;
+let isBlocked1 = false, isBlocked2 = false;
+
+let score1 = 0, level1 = 0;
+let score2 = 0, level2 = 0;
+
+const levelSpeeds = [3000, 2000, 1200]; // niveles 0, 1, 2 (más rápido = mayor dificultad)
+
+document.getElementById('mode').addEventListener('change', e => {
+  mode = parseInt(e.target.value);
+  name2Input.style.display = mode === 2 ? "inline-block" : "none";
+});
+
+function startGame() {
+  menu.classList.remove('active');
+  game.classList.add('active');
+  if (mode === 2) track2.style.display = 'block';
+
+  startPlayer('track1', 'player1', 'questionBox1', 'question1', 'answers1', () => isJumping1, v => isJumping1 = v, () => isBlocked1, v => isBlocked1 = v, () => score1++, () => level1++, () => score1, () => level1);
+  if (mode === 2) {
+    startPlayer('track2', 'player2', 'questionBox2', 'question2', 'answers2', () => isJumping2, v => isJumping2 = v, () => isBlocked2, v => isBlocked2 = v, () => score2++, () => level2++, () => score2, () => level2);
+  }
+}
+
+function startPlayer(trackId, playerId, boxId, qId, aId, getJump, setJump, getBlocked, setBlocked, incScore, incLevel, getScore, getLevel) {
+  const track = document.getElementById(trackId);
+  const player = document.getElementById(playerId);
+  const box = document.getElementById(boxId);
+  const qText = document.getElementById(qId);
+  const aBox = document.getElementById(aId);
+  const finish = track.querySelector('.finish-line');
+
+  function spawnObstacle() {
+    if (getBlocked()) return;
+
+    const obs = document.createElement('div');
+    obs.classList.add('obstacle');
+    obs.style.left = '100%';
+    track.appendChild(obs);
+
+    const move = setInterval(() => {
+      if (getBlocked()) return;
+
+      let left = parseFloat(getComputedStyle(obs).left);
+      if (isNaN(left)) left = track.offsetWidth;
+      obs.style.left = `${left - 5}px`;
+
+      const o = obs.getBoundingClientRect();
+      const p = player.getBoundingClientRect();
+      const f = finish.getBoundingClientRect();
+
+      if (!getJump() && o.left < p.right && o.right > p.left && o.bottom > p.top) {
+        setBlocked(true);
+        showQuestion(box, qText, aBox, () => {
+          incScore();
+          if (getScore() % 3 === 0) incLevel();
+          track.removeChild(obs);
+          setBlocked(false);
+        });
+        clearInterval(move);
+      }
+
+      if (o.right < 0) {
+        track.removeChild(obs);
+        clearInterval(move);
+      }
+
+      if (p.right >= f.left) {
+        alert(`¡${playerId === 'player1' ? 'Jugador 1' : 'Jugador 2'} ha ganado!`);
+        location.reload();
+      }
+    }, 30);
+
+    const nextDelay = levelSpeeds[Math.min(getLevel(), levelSpeeds.length - 1)];
+    setTimeout(spawnObstacle, nextDelay + Math.random() * 1000);
+  }
+
+  spawnObstacle();
+}
+
+function showQuestion(box, qText, aBox, callback) {
+  const q = questions[Math.floor(Math.random() * questions.length)];
+  qText.textContent = q.question;
+  aBox.innerHTML = "";
+  box.classList.add("active");
+
+  q.answers.forEach((ans, i) => {
+    const btn = document.createElement("button");
+    btn.className = "answer";
+    btn.textContent = ans;
+    btn.onclick = () => {
+      if (i === q.correct) {
+        box.classList.remove("active");
+        callback();
+      } else {
+        box.classList.remove("active");
+        setTimeout(() => location.reload(), 1000);
+      }
+    };
+    aBox.appendChild(btn);
+  });
+}
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !isJumping1 && !isBlocked1) {
+    jump('player1', () => isJumping1 = true, () => isJumping1 = false);
+  }
+  if (e.code === 'ArrowUp' && mode === 2 && !isJumping2 && !isBlocked2) {
+    jump('player2', () => isJumping2 = true, () => isJumping2 = false);
+  }
+});
+
+function jump(id, startJump, endJump) {
+  const player = document.getElementById(id);
+  startJump();
+  player.style.bottom = '150px';
+  setTimeout(() => {
+    player.style.bottom = '0px';
+    setTimeout(endJump, 200);
+  }, 400);
+}
+</script>
+
+</body>
+</html>
